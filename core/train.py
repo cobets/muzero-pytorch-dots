@@ -341,10 +341,15 @@ def train(config, summary_writer=None):
                                         prob_alpha=config.priority_prob_alpha)
     workers = [DataWorker.remote(rank, config, storage, replay_buffer)
                for rank in range(0, config.num_actors)]
+
+    object_refs = []
     for worker in workers:
-        worker.run.remote()
-    workers += [_test.remote(config, storage)]
+        object_refs.append(worker.run.remote())
+
+    object_refs.append(_test.remote(config, storage))
+
     _train(config, storage, replay_buffer, summary_writer)
-    ray.wait(workers, num_returns=len(workers))
+
+    ray.wait(object_refs, num_returns=len(object_refs))
 
     return config.get_uniform_network().set_weights(ray.get(storage.get_weights.remote()))
