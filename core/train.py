@@ -345,6 +345,6 @@ def train(config, summary_writer=None):
         worker.run.remote()
     workers += [_test.remote(config, storage)]
     _train(config, storage, replay_buffer, summary_writer)
-    ray.wait(workers, len(workers))
+    ray.wait(workers, num_returns=len(workers))
 
     return config.get_uniform_network().set_weights(ray.get(storage.get_weights.remote()))
